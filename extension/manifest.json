@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Finance Explain Assistant",
+  "description": "Explains financial terms in simple language when you select text.",
+  "version": "0.1.0",
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["overlay.js", "content.js"],
+      "css": ["overlay.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
