@@ -16,10 +16,13 @@
   "type": "commonjs",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^1.40.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^4.21.0"
+    "express": "^4.21.0",
+    "opik": "^1.10.4",
+    "opik-gemini": "^1.10.8",
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
