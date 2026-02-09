@@ -85,8 +85,10 @@ Create a `.env` file in the `backend/` directory:
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
-PORT=3000
-OPIK_API_KEY=your_opik_api_key_here  # Optional
+OPIK_URL_OVERRIDE=https://www.comet.com/opik/api
+OPIK_PROJECT_NAME=
+OPIK_API_KEY=
+OPIK_WORKSPACE= 
 ```
 
 #### 3. Start the Backend Server
