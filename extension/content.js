@@ -34,9 +34,9 @@ document.addEventListener("mouseup", () => {
       });
 
       const data = await response.json();
-      finOverlay.updateOverlay(data.explanation);
+      finOverlay.updateOverlay(data.explanation, data.traceId);
     } catch {
-      finOverlay.updateOverlay("Unable to explain this term right now.");
+      finOverlay.updateOverlay("Unable to explain this term right now.", null);
     }
   }, 300);
 });

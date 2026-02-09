@@ -1,10 +1,12 @@
 let overlayEl = null;
+let currentTraceId = null;
 
 function showOverlay(rect, loading = true) {
   removeOverlay();
 
   overlayEl = document.createElement("div");
   overlayEl.className = "fin-overlay";
+  currentTraceId = null;
 
   overlayEl.innerHTML = loading
     ? `<div class="fin-overlay-loading">Explaining…</div>`
@@ -15,20 +17,63 @@ function showOverlay(rect, loading = true) {
   attachDismissHandlers();
 }
 
-function updateOverlay(text) {
+function sendOverlayFeedback(vote) {
+  if (!currentTraceId) return;
+
+  fetch("http://localhost:3000/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      traceId: currentTraceId,
+      vote,
+      source: "overlay",
+    }),
+  }).catch(() => {
+    // Feedback is best-effort; ignore errors on client
+  });
+}
+
+function updateOverlay(text, traceId) {
   if (!overlayEl) return;
 
+  currentTraceId = traceId || null;
+
   overlayEl.innerHTML = `
-    <div>${text}</div>
+    <div class="fin-overlay-body">${text}</div>
     <div class="fin-overlay-footer">
-      Educational only · Not financial advice
+      <span>Educational only · Not financial advice</span>
+      <div class="fin-overlay-feedback">
+        <button class="fin-feedback-btn fin-feedback-up" data-vote="up" title="This was helpful">
+          👍
+        </button>
+        <button class="fin-feedback-btn fin-feedback-down" data-vote="down" title="This wasn't helpful">
+          👎
+        </button>
+      </div>
     </div>
   `;
+
+  const feedbackButtons = overlayEl.querySelectorAll(".fin-feedback-btn");
+  feedbackButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const vote = btn.getAttribute("data-vote");
+      if (!vote) return;
+      sendOverlayFeedback(vote);
+
+      const footer = overlayEl.querySelector(".fin-overlay-footer");
+      if (footer) {
+        footer.innerHTML = `
+          <span>Thanks for your feedback. Educational only · Not financial advice</span>
+        `;
+      }
+    });
+  });
 }
 
 function removeOverlay() {
   if (overlayEl) overlayEl.remove();
   overlayEl = null;
+  currentTraceId = null;
 }
 
 function positionOverlay(rect) {

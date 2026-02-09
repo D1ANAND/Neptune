@@ -84,8 +84,8 @@ console.log("Comet Assistant Sidebar Loaded");
 
       const data = await response.json();
       
-      // Update loading message with real response
-      updateMessageUI(loadingId, data.reply);
+      // Update loading message with real response and attach feedback controls
+      updateMessageUI(loadingId, data.reply, data.traceId);
       
       // Add to history
       chatHistory.push({ role: "model", parts: [{ text: data.reply }] });
@@ -95,19 +95,93 @@ console.log("Comet Assistant Sidebar Loaded");
     }
   }
 
-  function addMessageToUI(role, text) {
+  async function sendSidebarFeedback(traceId, vote) {
+    if (!traceId) return;
+
+    try {
+      await fetch("http://localhost:3000/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          traceId,
+          vote,
+          source: "sidebar",
+        }),
+      });
+    } catch {
+      // Best-effort; ignore client-side errors
+    }
+  }
+
+  function addMessageToUI(role, text, traceId) {
     const msgDiv = document.createElement("div");
     msgDiv.className = `fin-message ${role}`;
-    msgDiv.innerText = text;
     msgDiv.id = "msg-" + Date.now();
+
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "fin-message-content";
+    contentDiv.innerText = text;
+    msgDiv.appendChild(contentDiv);
+
+    if (role === "model" && traceId) {
+      const feedbackBar = document.createElement("div");
+      feedbackBar.className = "fin-message-feedback";
+      feedbackBar.innerHTML = `
+        <span class="fin-message-feedback-label">Was this helpful?</span>
+        <button class="fin-feedback-btn fin-feedback-up" data-vote="up" title="This was helpful">👍</button>
+        <button class="fin-feedback-btn fin-feedback-down" data-vote="down" title="This wasn't helpful">👎</button>
+      `;
+
+      const buttons = feedbackBar.querySelectorAll(".fin-feedback-btn");
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const vote = btn.getAttribute("data-vote");
+          if (!vote) return;
+          await sendSidebarFeedback(traceId, vote);
+          feedbackBar.innerHTML = `<span class="fin-message-feedback-label">Thanks for your feedback.</span>`;
+        });
+      });
+
+      msgDiv.appendChild(feedbackBar);
+    }
+
     chatHistoryEl.appendChild(msgDiv);
     chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
     return msgDiv.id;
   }
 
-  function updateMessageUI(id, newText) {
+  function updateMessageUI(id, newText, traceId) {
     const el = document.getElementById(id);
-    if (el) el.innerText = newText;
+    if (!el) return;
+
+    // Reset contents so we can re-render with optional feedback
+    el.innerHTML = "";
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "fin-message-content";
+    contentDiv.innerText = newText;
+    el.appendChild(contentDiv);
+
+    if (traceId) {
+      const feedbackBar = document.createElement("div");
+      feedbackBar.className = "fin-message-feedback";
+      feedbackBar.innerHTML = `
+        <span class="fin-message-feedback-label">Was this helpful?</span>
+        <button class="fin-feedback-btn fin-feedback-up" data-vote="up" title="This was helpful">👍</button>
+        <button class="fin-feedback-btn fin-feedback-down" data-vote="down" title="This wasn't helpful">👎</button>
+      `;
+
+      const buttons = feedbackBar.querySelectorAll(".fin-feedback-btn");
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const vote = btn.getAttribute("data-vote");
+          if (!vote) return;
+          await sendSidebarFeedback(traceId, vote);
+          feedbackBar.innerHTML = `<span class="fin-message-feedback-label">Thanks for your feedback.</span>`;
+        });
+      });
+
+      el.appendChild(feedbackBar);
+    }
   }
 
   // Initialize on load
